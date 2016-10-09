@@ -2,8 +2,17 @@ package doJobs.doJobs;
 
 import java.util.ArrayList;
 
-public interface Job {
+abstract class  Job extends Thread {
 
-	public String execute();
-
+	public abstract String execute();
+	String jobId;
+	String jobClass;
+	String jobParams;
+	MsgCtr mc;
+	public Job(MsgCtr mc,String jobID, String jobClass, String jobParams) {
+		this.jobId=jobID;
+		this.jobClass=jobClass;
+		this.jobParams=jobParams;
+		this.mc=mc;
+	}
 }

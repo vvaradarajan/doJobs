@@ -2,18 +2,12 @@ package doJobs.doJobs;
 
 import java.util.ArrayList;
 
-public class JobA_Roll extends Thread implements Job {
-	 private Thread t;
-	 public MsgCtr mc;
-	 public String jobId;
-	 public ArrayList<String> StConds;
-	 JobA_Roll(MsgCtr mc,String jobId) {
-			StConds=new ArrayList<String>();
-			StConds.add("Gazebo");
-			this.mc = mc;
-			this.jobId=jobId;
-		}
-		
+public class JobA_Roll extends Job {
+	public JobA_Roll(MsgCtr mc, String jobID, String jobClass, String jobParams) {
+		super(mc, jobID, jobClass, jobParams);
+		// TODO Auto-generated constructor stub
+	}
+	public ArrayList<String> StConds;
 	public String execute() {
 		// TODO Auto-generated method stub
 		return null;
