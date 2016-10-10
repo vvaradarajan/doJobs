@@ -57,9 +57,10 @@ public class App
     {
         //initiate MsgCtr
 		//mainTest();
-    	MsgCtr mc = new MsgCtr();
+		long startTime = System.nanoTime();
+    	MsgCtr mc = new MsgCtr(startTime);
     	System.out.println( "Allowing all jobs to go free!" );
-    	int corePoolSize=3; int maximumPoolSize=10; long keepAliveTime=60;
+    	int corePoolSize=5; int maximumPoolSize=10; long keepAliveTime=60;
     	TimeUnit unit=TimeUnit.SECONDS;
     	BlockingQueue<Runnable> workQueue = new ArrayBlockingQueue<Runnable>(100);
     	ThreadPoolExecutor tpi = new ThreadPoolExecutor(corePoolSize,maximumPoolSize,keepAliveTime,unit, workQueue);
@@ -92,6 +93,8 @@ public class App
     	tpi.shutdown();
     	tpi.awaitTermination(1000, TimeUnit.SECONDS);
     	System.out.println("All threads to Completed..");
-    	mc.dumpMsgs();        
+    	mc.dumpMsgs();  
+    	long endTime = System.nanoTime();
+    	System.out.println("Total Elapsed Time: " + (endTime-startTime)/1000000 + " seconds");
     }
 }

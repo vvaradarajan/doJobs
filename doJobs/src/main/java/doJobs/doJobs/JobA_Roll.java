@@ -9,12 +9,14 @@ public class JobA_Roll extends Job {
 	}
 	public String execute() {
 		// TODO Auto-generated method stub
+		System.out.println("Job " + jobId+ " started");
 		try {
 			Thread.sleep(jobDuration*1000);
 		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		System.out.println("Job " + jobId+ " finished");
 		return jobId+" done";
 	}
 	@Override
@@ -36,7 +38,7 @@ public class JobA_Roll extends Job {
          } else {
         System.out.println("Waiting for msg: "+ jobId);
 		try {
-			Thread.sleep(1000);
+			Thread.sleep(100);
 		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
