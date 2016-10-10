@@ -22,14 +22,7 @@ public class JobA_Roll extends Job {
 	@Override
 	public void run(){
        while (true) {
-    	boolean startExec = true;
-        for (String s: StConds) {
-        	startExec = mc.msgPosted(s);
-        	if (startExec) {
-        		System.out.println(jobId + " got msg: "+ s);
-        	}
-        	else break;
-        }
+       TestIfReady();
        if (startExec) 
          {execute(); 
           mc.post(jobId + " done");
@@ -44,4 +37,16 @@ public class JobA_Roll extends Job {
        }
       }
    }
+	@Override
+	public void TestIfReady() {
+		// TODO Auto-generated method stub
+		startExec = true;
+        for (String s: StConds) {
+        	startExec = mc.IsMsgPosted(s);
+        	if (startExec) {
+        		System.out.println(jobId + " got msg: "+ s);
+        	}
+        	else break;
+        }
+	}
 }

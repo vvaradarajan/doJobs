@@ -13,6 +13,9 @@ abstract class  Job extends Thread {
 	String jobClass;
 	String jobParams;
 	MsgCtr mc;
+	boolean startExec;
+	public abstract void TestIfReady();
+	
 	public ArrayList<String> StConds;
 	public int jobDuration;
 	public Job(MsgCtr mc,String jobID, String jobClass, String jobParams) {
