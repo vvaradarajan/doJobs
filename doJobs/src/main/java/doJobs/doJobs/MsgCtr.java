@@ -21,6 +21,12 @@ public synchronized boolean msgPosted(String s) {
 	return true;
 }
 
+public void dumpMsgs() {
+	System.out.println("Messages Rcvd: count="+msgs.size());
+	for (String s:msgs) {
+		System.out.println(s);
+	}
+}
 public synchronized void post(String msg) {
 	msgs.add(msg);
 	System.out.println("Got: " + msg);

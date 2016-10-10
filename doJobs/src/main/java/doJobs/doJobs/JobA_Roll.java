@@ -7,16 +7,28 @@ public class JobA_Roll extends Job {
 		super(mc, jobID, jobClass, jobParams);
 		// TODO Auto-generated constructor stub
 	}
-	public ArrayList<String> StConds;
 	public String execute() {
 		// TODO Auto-generated method stub
-		return null;
+		try {
+			Thread.sleep(jobDuration*1000);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return jobId+" done";
 	}
 	@Override
 	public void run(){
-       System.out.println("JobA_Roll in Mix");
+       System.out.println("JobA_Roll => " + jobId + " in Mix");
        while (true) {
-       boolean startExec = mc.msgPosted("Gazebo");
+    	boolean startExec = true;
+        for (String s: StConds) {
+        	startExec = mc.msgPosted(s);
+        	if (startExec) {
+        		System.out.println(jobId + " got msg: "+ s);
+        	}
+        	else break;
+        }
        if (startExec) 
          {execute(); 
           mc.post(jobId + " done");
