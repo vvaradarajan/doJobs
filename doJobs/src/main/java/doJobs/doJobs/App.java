@@ -34,8 +34,8 @@ public class App
     static ArrayList<jobLine> jobs = new ArrayList<jobLine>();
     static {
     	//put some jobs
-    	jobs.add(new jobLine("a","JobA_Roll","{Dependents:['c','d','e'],jobTime:1}"));
-    	jobs.add(new jobLine("b","JobA_Roll","{Dependents:['c','d','e'],jobTime:5}"));
+    	jobs.add(new jobLine("a","JobA_Roll","{Dependents:['d','e'],jobTime:1}"));
+    	jobs.add(new jobLine("b","JobA_Roll","{Dependents:['d','e'],jobTime:5}"));
     	jobs.add(new jobLine("c","JobA_Roll","{Dependents:['d','e'],jobTime:6}"));
     	jobs.add(new jobLine("d","JobA_Roll","{Dependents:[],jobTime:1}"));
     	jobs.add(new jobLine("e","JobA_Roll","{Dependents:[],jobTime:1}"));

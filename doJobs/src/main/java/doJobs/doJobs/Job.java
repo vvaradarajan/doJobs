@@ -24,11 +24,14 @@ abstract class  Job extends Thread {
 		Gson g= new Gson();
 		JsonObject jo= (JsonObject) new JsonParser().parse(jobParams);
 		JsonArray ja = jo.get("Dependents").getAsJsonArray();
+		StringBuffer sTemp = new StringBuffer();
 		for (JsonElement s: ja){
 		  String waitForjId=s.getAsString();
 		  StConds.add(waitForjId+" done");
-		  System.out.println(jobId +" will wait for: " + waitForjId);
+		  sTemp.append(waitForjId+",");
 		}
+		if (sTemp.length() > 2) sTemp.deleteCharAt(sTemp.length()-1);
+		System.out.println(jobId +" will wait for: " + sTemp.toString());
 		jobDuration = jo.get("jobTime").getAsInt();
 	}
 }

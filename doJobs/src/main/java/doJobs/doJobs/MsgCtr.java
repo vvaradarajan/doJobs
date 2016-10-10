@@ -20,7 +20,6 @@ public void dumpMsgs() {
 }
 public synchronized void post(String msg) {
 	msgs.add(msg);
-	System.out.println("Got: " + msg + " at " + (System.nanoTime()-startTime)/1000000);
 }
 MsgCtr(long startTime) {
 	msgs = new HashSet<String>();
