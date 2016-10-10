@@ -20,6 +20,7 @@ public void dumpMsgs() {
 }
 public synchronized void post(String msg) {
 	msgs.add(msg);
+	notify();
 }
 MsgCtr(long startTime) {
 	msgs = new HashSet<String>();

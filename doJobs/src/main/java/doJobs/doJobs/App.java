@@ -59,11 +59,13 @@ public class App
 		//mainTest();
 		long startTime = System.nanoTime();
     	MsgCtr mc = new MsgCtr(startTime);
+    	Reporter rptr = new Reporter(mc);
     	System.out.println( "Allowing all jobs to go free!" );
     	int corePoolSize=5; int maximumPoolSize=10; long keepAliveTime=60;
     	TimeUnit unit=TimeUnit.SECONDS;
     	BlockingQueue<Runnable> workQueue = new ArrayBlockingQueue<Runnable>(100);
     	ThreadPoolExecutor tpi = new ThreadPoolExecutor(corePoolSize,maximumPoolSize,keepAliveTime,unit, workQueue);
+    	tpi.execute(rptr);
     	Job jl;
     	mc.dumpMsgs();
     	for (jobLine j:jobs) {
