@@ -7,30 +7,42 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 abstract class  Job extends Thread {
-
+    static enum jobStatusCode {
+    	wait,running,complete
+    };
+    class conds {
+    	String jobId;
+    	jobStatusCode js;
+    	conds(String jobId,jobStatusCode js) {
+    		this.jobId=jobId;
+    		this.js=js;
+    	}
+    }
 	public abstract String execute();
 	String jobId;
 	String jobClass;
 	String jobParams;
+	jobStatusCode jobStatus;
 	MsgCtr mc;
 	boolean startExec;
 	public abstract void TestIfReady();
 	
-	public ArrayList<String> StConds;
+	public ArrayList<conds> StConds;
 	public int jobDuration;
 	public Job(MsgCtr mc,String jobID, String jobClass, String jobParams) {
 		this.jobId=jobID;
 		this.jobClass=jobClass;
 		this.jobParams=jobParams;
 		this.mc=mc;
-		this.StConds=new ArrayList<String>();
+		this.StConds=new ArrayList<conds>();
+		this.jobStatus=jobStatusCode.wait;
 		Gson g= new Gson();
 		JsonObject jo= (JsonObject) new JsonParser().parse(jobParams);
 		JsonArray ja = jo.get("Dependents").getAsJsonArray();
 		StringBuffer sTemp = new StringBuffer();
 		for (JsonElement s: ja){
 		  String waitForjId=s.getAsString();
-		  StConds.add(waitForjId+" done");
+		  StConds.add(new conds(waitForjId,jobStatusCode.complete));
 		  sTemp.append(waitForjId+",");
 		}
 		if (sTemp.length() > 2) sTemp.deleteCharAt(sTemp.length()-1);

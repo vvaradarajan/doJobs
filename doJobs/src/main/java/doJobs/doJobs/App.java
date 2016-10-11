@@ -2,6 +2,10 @@ package doJobs.doJobs;
 
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -12,7 +16,8 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-
+import doJobs.doJobs.*;
+import doJobs.doJobs.Job.jobStatusCode;
 /**
  * Hello world!
  *
@@ -25,20 +30,45 @@ public class App
 		String jobId;
     	String jobClass;
     	String jobParams;
+    	jobStatusCode jobStatus ;
     	public jobLine(String jobId, String jobClass, String jobParams) {
 			this.jobId=jobId;
 			this.jobClass=jobClass;
 			this.jobParams=jobParams;
 		}
+		@Override
+		public int hashCode() {
+			final int prime = 31;
+			int result = 1;
+			result = prime * result + ((jobId == null) ? 0 : jobId.hashCode());
+			return result;
+		}
+		@Override
+		public boolean equals(Object obj) {
+			if (this == obj)
+				return true;
+			if (obj == null)
+				return false;
+			if (getClass() != obj.getClass())
+				return false;
+			jobLine other = (jobLine) obj;
+			if (jobId == null) {
+				if (other.jobId != null)
+					return false;
+			} else if (!jobId.equals(other.jobId))
+				return false;
+			return true;
+		}
     }
-    static ArrayList<jobLine> jobs = new ArrayList<jobLine>();
+    static ArrayList<jobLine> jobLines = new ArrayList<jobLine>();
+	static Map<String,Job> jobs = new HashMap<String,Job>();
     static {
     	//put some jobs
-    	jobs.add(new jobLine("a","JobA_Roll","{Dependents:['d','e'],jobTime:1}"));
-    	jobs.add(new jobLine("b","JobA_Roll","{Dependents:['d','e'],jobTime:5}"));
-    	jobs.add(new jobLine("c","JobA_Roll","{Dependents:['d','e'],jobTime:6}"));
-    	jobs.add(new jobLine("d","JobA_Roll","{Dependents:[],jobTime:1}"));
-    	jobs.add(new jobLine("e","JobA_Roll","{Dependents:[],jobTime:1}"));
+    	jobLines.add(new jobLine("a","JobA_Roll","{Dependents:['d','e'],jobTime:1}"));
+    	jobLines.add(new jobLine("b","JobA_Roll","{Dependents:['d','e'],jobTime:5}"));
+    	jobLines.add(new jobLine("c","JobA_Roll","{Dependents:['d','e'],jobTime:6}"));
+    	jobLines.add(new jobLine("d","JobA_Roll","{Dependents:[],jobTime:1}"));
+    	jobLines.add(new jobLine("e","JobA_Roll","{Dependents:[],jobTime:1}"));
     }
     public static void mainTest() {
     	String jobParams = "{Dependents:['c','d','e'],jobTime:1}";
@@ -58,21 +88,24 @@ public class App
         //initiate MsgCtr
 		//mainTest();
 		long startTime = System.nanoTime();
-    	MsgCtr mc = new MsgCtr(startTime);
-    	Reporter rptr = new Reporter(mc);
+    	MsgCtr mc = new MsgCtr(startTime,jobs);
+    	Reporter rptr = new Reporter(mc,jobs);
     	System.out.println( "Allowing all jobs to go free!" );
     	int corePoolSize=5; int maximumPoolSize=10; long keepAliveTime=60;
     	TimeUnit unit=TimeUnit.SECONDS;
     	BlockingQueue<Runnable> workQueue = new ArrayBlockingQueue<Runnable>(100);
     	ThreadPoolExecutor tpi = new ThreadPoolExecutor(corePoolSize,maximumPoolSize,keepAliveTime,unit, workQueue);
-    	tpi.execute(rptr);
+    	//run reporter as a separate thread
+    	Thread RepThrd= new Thread(rptr);
+    	RepThrd.start();
     	Job jl;
     	mc.dumpMsgs();
-    	for (jobLine j:jobs) {
+    	 for (jobLine j :jobLines) {  
 			try {
 				Constructor<Job> c = (Constructor<Job>) Class.forName("doJobs.doJobs." + j.jobClass)
 						.getConstructor(MsgCtr.class, String.class, String.class, String.class);
 				jl = (Job) c.newInstance(mc, j.jobId, j.jobClass, j.jobParams);
+				jobs.put(j.jobId,jl);
 				tpi.execute(jl);
 			} catch (InstantiationException e) {
 				// TODO Auto-generated catch block
@@ -95,6 +128,7 @@ public class App
     	tpi.shutdown();
     	tpi.awaitTermination(1000, TimeUnit.SECONDS);
     	System.out.println("All threads to Completed..");
+    	RepThrd.interrupt(); // stop reporter thread after all jobs are done
     	mc.dumpMsgs();  
     	long endTime = System.nanoTime();
     	System.out.println("Total Elapsed Time: " + (endTime-startTime)/1000000 + " seconds");

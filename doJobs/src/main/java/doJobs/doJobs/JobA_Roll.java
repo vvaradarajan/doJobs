@@ -24,8 +24,9 @@ public class JobA_Roll extends Job {
        while (true) {
        TestIfReady();
        if (startExec) 
-         {execute(); 
-          mc.post(jobId + " done");
+         {mc.post(jobId ,jobStatusCode.running);
+    	  execute(); 
+          mc.post(jobId ,jobStatusCode.complete);
           return;
          } else {
 		try {
@@ -41,10 +42,10 @@ public class JobA_Roll extends Job {
 	public void TestIfReady() {
 		// TODO Auto-generated method stub
 		startExec = true;
-        for (String s: StConds) {
-        	startExec = mc.IsMsgPosted(s);
+        for (conds s: StConds) {
+        	startExec = mc.IsJobStatus(s.jobId, s.js);
         	if (startExec) {
-        		System.out.println(jobId + " got msg: "+ s);
+        		System.out.println(jobId + " got msg: "+ s.js.name());
         	}
         	else break;
         }
