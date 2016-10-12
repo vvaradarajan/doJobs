@@ -9,14 +9,14 @@ public class JobA_Roll extends Job {
 	}
 	public String execute() {
 		// TODO Auto-generated method stub
-		System.out.println("Job " + jobId+ " started at: " + (System.nanoTime()-mc.startTime)/1000000);
+		System.out.println("Job " + jobId+ " started at: " + mc.getTimeFromStart());
 		try {
 			Thread.sleep(jobDuration*1000);
 		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		System.out.println("Job " + jobId+ " finished  at: " + (System.nanoTime()-mc.startTime)/1000000);
+		System.out.println("Job " + jobId+ " finished  at: " + mc.getTimeFromStart());
 		return jobId+" done";
 	}
 	@Override

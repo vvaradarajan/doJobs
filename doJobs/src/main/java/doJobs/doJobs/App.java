@@ -1,6 +1,8 @@
 package doJobs.doJobs;
 
 import java.lang.reflect.Constructor;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -62,6 +64,7 @@ public class App
     }
     static ArrayList<jobLine> jobLines = new ArrayList<jobLine>();
 	static Map<String,Job> jobs = new HashMap<String,Job>();
+	static final int timeFactor=1000000; //convert nano seconds to ms
     static {
     	//put some jobs
     	jobLines.add(new jobLine("a","JobA_Roll","{Dependents:['d','e'],jobTime:1}"));
@@ -87,9 +90,11 @@ public class App
     {
         //initiate MsgCtr
 		//mainTest();
+		System.out.println("Starting..");
 		long startTime = System.nanoTime();
     	MsgCtr mc = new MsgCtr(startTime,jobs);
-    	Reporter rptr = new Reporter(mc,jobs);
+    	Reporter rptr = new Reporter(mc,jobs,Paths.get("c:\\junk\\report.txt"));
+    	rptr.releaseInterProcessLock();
     	System.out.println( "Allowing all jobs to go free!" );
     	int corePoolSize=5; int maximumPoolSize=10; long keepAliveTime=60;
     	TimeUnit unit=TimeUnit.SECONDS;
@@ -128,9 +133,9 @@ public class App
     	tpi.shutdown();
     	tpi.awaitTermination(1000, TimeUnit.SECONDS);
     	System.out.println("All threads to Completed..");
-    	RepThrd.interrupt(); // stop reporter thread after all jobs are done
+    	rptr.stopFlag=true; // stop reporter thread after all jobs are done
     	mc.dumpMsgs();  
     	long endTime = System.nanoTime();
-    	System.out.println("Total Elapsed Time: " + (endTime-startTime)/1000000 + " seconds");
+    	System.out.println("Total Elapsed Time: " + mc.getTimeFromStart() + " ms");
     }
 }

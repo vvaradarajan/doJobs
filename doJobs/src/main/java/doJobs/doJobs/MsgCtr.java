@@ -17,6 +17,9 @@ public synchronized boolean IsMsgPosted(String s) {
 	return false;
 }
 
+public long getTimeFromStart() {
+	return (System.nanoTime()-startTime)/App.timeFactor;
+}
 public synchronized boolean IsJobStatus(String jobId,jobStatusCode js) {
 	Job j = jobs.get(jobId);
 	if (j == null) return false; //job may not have been added to jobs yet

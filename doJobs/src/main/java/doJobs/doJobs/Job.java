@@ -49,4 +49,8 @@ abstract class  Job extends Thread {
 		System.out.println(jobId +" will wait for: " + sTemp.toString());
 		jobDuration = jo.get("jobTime").getAsInt();
 	}
+	public String getReporterString() {
+		// TODO Auto-generated method stub
+		return jobId+":"+jobStatus.name();
+	}
 }
