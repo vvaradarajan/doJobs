@@ -12,10 +12,16 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 
 import doJobs.doJobs.App.jobLine;
 import doJobs.doJobs.Job.jobStatusCode;
-
+/**
+ * 
+ * This class uses a lock file to store jobs data. The lock is due to sharing this file with the monitor (pyJobWeb)
+ *
+ */
 public class Reporter implements Runnable {
 	MsgCtr mc;
 	Map<String,Job> jobs;
@@ -41,12 +47,12 @@ public class Reporter implements Runnable {
 		jobStatusChanges.put(jid,(ArrayList<StatusTime>) st);
 		return st;
 	}
-	Reporter(MsgCtr mc, Map<String,Job> jobs,Path file) {
+	Reporter(MsgCtr mc, Map<String,Job> jobs,Path reportFile,Path lockFile) {
 		this.mc=mc;
 		this.jobs=jobs;
-		this.reportFile=file;
+		this.reportFile=reportFile;
 		this.stopFlag=false;
-		this.lockFile=Paths.get("C:/junk/junk.lock");
+		this.lockFile=lockFile;
 		this.jobStatusChanges=new HashMap<String,ArrayList<StatusTime>> ();
 	}
 	boolean getInterProcessLock() {
@@ -79,12 +85,11 @@ public class Reporter implements Runnable {
 		Job j;
 		BufferedWriter writer = null;
 		if (getInterProcessLock()) {
-			StringBuffer s = new StringBuffer();
 			ArrayList<StatusTime> sta;
-			s.append("{jobs:[");
+			JsonArray ja=new JsonArray();
 			for (String jid : jobs.keySet()) {
 				// create a json array [[jobId,status], ...]
-				j = jobs.get(jid);
+				j=jobs.get(jid);
 				sta = getJobStatusArrayList(jid);
 				jobStatusCode cjs = j.jobStatus;
 				StatusTime lastSte = sta.get(sta.size() - 1);
@@ -96,16 +101,23 @@ public class Reporter implements Runnable {
 					sta.add(lastSte);
 				}
 				//output the Json
-				s.append("{jobId:'"+jid+"',");
-				for (StatusTime st:sta) s.append(st.status.name()+":"+st.msTime+",");
-				s.setCharAt(s.length() - 1, '}');
-				s.append(",");
-
+				JsonObject jo=new JsonObject();
+				jo.addProperty("jobId", j.jobId);
+				//compute the status time as the interval between two status
+				long startTime = mc.startTime/1000000000;
+				for (int i=2;i<sta.size();i++) { //skip the 'wait' state by starting at index 2
+					jo.addProperty(sta.get(i-1).status.name(),sta.get(i).msTime-sta.get(i-1).msTime);
+				}
+				//Add 20ms as the duration of the last status, so that it has some duration
+				jo.addProperty(sta.get(sta.size()-1).status.name(),20);
+				ja.add(jo);
 			}
-			s.setCharAt(s.length() - 1, ']');s.append("}");
+			JsonObject jsAll=new JsonObject();
+			jsAll.add("jobs", ja);
 			try {
 				writer = Files.newBufferedWriter(reportFile, charset);
-				writer.write(s.toString(), 0, s.length());
+				String s=jsAll.toString();
+				writer.write(s, 0, s.length());
 				writer.close();
 			} catch (IOException e) {
 				// TODO Auto-generated catch block

@@ -24,7 +24,7 @@ public class JobA_Roll extends Job {
        while (true) {
        TestIfReady();
        if (startExec) 
-         {mc.post(jobId ,jobStatusCode.running);
+         {mc.post(jobId ,jobStatusCode.executing);
     	  execute(); 
           mc.post(jobId ,jobStatusCode.complete);
           return;

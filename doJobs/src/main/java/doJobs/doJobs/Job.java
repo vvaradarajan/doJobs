@@ -8,7 +8,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 abstract class  Job extends Thread {
     static enum jobStatusCode {
-    	wait,running,complete
+    	idle,wait,executing,complete
     };
     class conds {
     	String jobId;
@@ -35,7 +35,7 @@ abstract class  Job extends Thread {
 		this.jobParams=jobParams;
 		this.mc=mc;
 		this.StConds=new ArrayList<conds>();
-		this.jobStatus=jobStatusCode.wait;
+		this.jobStatus=jobStatusCode.idle;
 		Gson g= new Gson();
 		JsonObject jo= (JsonObject) new JsonParser().parse(jobParams);
 		JsonArray ja = jo.get("Dependents").getAsJsonArray();
