@@ -125,12 +125,6 @@ public class Reporter implements Runnable {
 			}
 			releaseInterProcessLock();
 		};
-		
-		if (stopFlag) {
-			System.out.println("Reporter Stopped");
-			dumpJobStatusTime();
-			System.exit(0);
-		}
 	}
 	void processMsgs() {
 		System.out.println("Reporter Process Messages");
@@ -146,6 +140,11 @@ public class Reporter implements Runnable {
                 //System.out.println("Waiting for trigger from MsgCtr...");
                 mc.wait();
                 processJobs();
+        		if (stopFlag) {
+        			System.out.println("Reporter Stopped");
+        			dumpJobStatusTime();
+        			System.exit(0);
+        		}
             }catch(InterruptedException e){
                 System.out.println("Reporter Interrupted and aborted!");
             }            

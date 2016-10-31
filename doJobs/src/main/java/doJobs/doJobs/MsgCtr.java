@@ -38,6 +38,7 @@ public void dumpMsgs() {
 	for (String s:msgs) {
 		System.out.println(s);
 	}
+	
 }
 public void dumpJobs() {
 	System.out.println("Jobs : count="+jobs.size());
@@ -50,6 +51,9 @@ public synchronized void post(String jobId,jobStatusCode js) {
 	msgs.add(jobId + " "+js.name());
 	Job jl=jobs.get(jobId);
 	jl.jobStatus=js;
+	notify();
+}
+public synchronized void endingPost() {
 	notify();
 }
 MsgCtr(long startTime,Map<String,Job> jobs) {

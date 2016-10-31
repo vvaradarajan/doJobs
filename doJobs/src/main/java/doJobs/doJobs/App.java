@@ -183,7 +183,8 @@ public class App
     	tpi.awaitTermination(1000, TimeUnit.SECONDS);
     	System.out.println("All threads to Completed..");
     	rptr.stopFlag=true; // stop reporter thread after all jobs are done
-    	mc.dumpMsgs();  
+    	mc.dumpMsgs();
+    	mc.endingPost();
     	long endTime = System.nanoTime();
     	System.out.println("Total Elapsed Time: " + mc.getTimeFromStart() + " ms");
     	while (true) {
