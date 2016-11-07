@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<entity-mappings version="1.0" xmlns="http://java.sun.com/xml/ns/persistence/orm" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://java.sun.com/xml/ns/persistence/orm http://java.sun.com/xml/ns/persistence/orm_1_0.xsd" 
+>
+<!-- 
+	<named-query name="sample">
+		<query><![CDATA[
+			SELECT 
+				website
+			FROM 
+				Website website
+			WHERE
+				website.userId = :userId
+		]]></query>
+	</named-query>
+	 -->
+<!-- **********Query: Duplicate sit records in Package Table**********  -->
+	<named-native-query name="Dup_pkg_records" result-set-mapping="Dup_pkg_records">
+		<query><![CDATA[
+	select emp.env,emp.app,emp.server,emp.instance,emp.pkgNM,emp.version,emp.fileNM,p.dup_count from em_packages emp 
+inner join (
+select sit.app,sit.server,sit.instance,sit.pkgNM,sit.version,count(*) as dup_count from em_packages sit
+ where env='sit'
+ group by sit.app,sit.server,sit.instance,sit.pkgNM,sit.version
+having count(*) > 1) p
+on emp.app=p.app and emp.server=p.server and emp.instance=p.instance and emp.version = p.version and emp.pkgNM = p.pkgNM
+inner join em_topInstances ti on sit.app=ti.app and sit.server=ti.server and sit.instance=ti.instance 
+where env='sit'
+order by sit.app,sit.server,sit.instance,sit.pkgNM,sit.version
+		]]></query>
+	</named-native-query>
+	<!-- **********Query: Different or missing packages in dvl vs Sit********** -->
+	<named-native-query name="Mismatch_pkg_records" result-set-mapping="Mismatch_pkg_records">
+		<query><![CDATA[
+select sit.env,sit.app,sit.server,sit.instance,sit.pkgNM,sit.Version,dvl.pkgNM as dvl_pkgNM,dvl.version as dvl_version,sit.fileNM,dvl.fileNM as dvl_fileNM, sit.updated_at as AsOfDate from
+(select * from em_packages where env='sit') sit
+left join 
+(select * from em_packages where env='dvl') dvl
+on sit.pkgNM = dvl.pkgNM
+and  sit.app=dvl.app and sit.server=dvl.server and sit.instance=dvl.instance
+inner join em_applicationRanking r on sit.app=r.app and sit.server=r.server and sit.instance=r.instance
+where (dvl.version is null or dvl.version <> sit.version )
+order by sit.env,sit.app,sit.server,sit.instance,sit.pkgNM,sit.Version
+		]]></query>
+	</named-native-query>
+	
+	<sql-result-set-mapping name="Dup_pkg_records">
+	    <column-result name="env" />
+	    <column-result name="app" />
+	    <column-result name="server" />
+	    <column-result name="instance" />
+	    <column-result name="pkgNM" />
+	    <column-result name="version" />
+	    <column-result name="fileNM" />
+	    <column-result name="dup_count" />
+	</sql-result-set-mapping>	
+
+<sql-result-set-mapping name="Mismatch_pkg_records">
+	    <column-result name="env" />
+	    <column-result name="app" />
+	    <column-result name="server" />
+	    <column-result name="instance" />
+	    <column-result name="pkgNM" />
+	    <column-result name="version" />
+	    <column-result name="dvl_pkgNM" />
+	    <column-result name="dvl_version" />
+	    <column-result name="fileNM" />
+	    <column-result name="dvl_fileNM" />
+	    <column-result name="AsOfDate" />
+</sql-result-set-mapping>	
+</entity-mappings>

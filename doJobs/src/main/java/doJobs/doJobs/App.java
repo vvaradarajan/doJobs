@@ -13,6 +13,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -22,6 +23,10 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
+import javax.persistence.Persistence;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
@@ -72,31 +77,10 @@ public class App
 			return true;
 		}
     }
-    static ArrayList<jobLine> jobLines = new ArrayList<jobLine>();
+    static List<JobTbl> jobLines = new ArrayList<JobTbl>();
 	static Map<String,Job> jobs = new HashMap<String,Job>();
 	static final int timeFactor=1000000; //convert nano seconds to ms
-	public static void loadJobLinesTest() {
-    	//put some jobs
-    	jobLines.add(new jobLine("a","JobA_Roll","{Dependents:['d','e'],jobTime:1}"));
-    	jobLines.add(new jobLine("b","JobA_Roll","{Dependents:['d','e'],jobTime:5}"));
-    	jobLines.add(new jobLine("c","JobA_Roll","{Dependents:['d','e'],jobTime:6}"));
-    	jobLines.add(new jobLine("d","JobA_Roll","{Dependents:[],jobTime:1}"));
-    	jobLines.add(new jobLine("e","JobA_Roll","{Dependents:[],jobTime:1}"));
-    }
-    public static void loadJobLines(String fileNM) throws IOException {
-    	BufferedReader b = new BufferedReader(new FileReader(fileNM));
-    	Pattern jobLinePattern= Pattern.compile("\"([^\"]+?)\",?\"([^\"]+?)\",?\"([^\"]+?)\"$");
-    	String ln;
-    	while ((ln=b.readLine())!=null) {
-    		Matcher m=jobLinePattern.matcher(ln);
-    		if (m.matches()) {
-		    	if (m.groupCount() == 3) {
-		    		jobLines.add(new jobLine(m.group(1),m.group(2),m.group(3)));
-	    		}
-	    		else System.out.println("No Groups Ignoring line: " + ln);
-    		} else System.out.println("No Match Ignoring line: " + ln);
-    	}
-    }
+	
     public static void mainTest() {
     	String jobParams = "{Dependents:['c','d','e'],jobTime:1}";
     	Gson g= new Gson();
@@ -138,13 +122,19 @@ public class App
 		}
 		String propPrefix="u";
 		if (System.getProperty("os.name").startsWith("Windows")) propPrefix="w";
-		loadJobLines(doJobsProperties.getProperty(propPrefix+".jobConfigfile"));
+		//jobLines=JobTbl.loadJobLines(doJobsProperties.getProperty(propPrefix+".jobConfigfile"));
+    	EntityManagerFactory emf = Persistence.createEntityManagerFactory("mysqlTables");
+    	EntityManager em = emf.createEntityManager();
+		jobLines=JobTbl.loadJobLinesDB(em, "ProjectG");
+		em.close();emf.close();
+		
 		long startTime = System.nanoTime();
     	MsgCtr mc = new MsgCtr(startTime,jobs);
     	Reporter rptr = new Reporter(mc,jobs,Paths.get(doJobsProperties.getProperty(propPrefix+".jobRptfile"))
     			,Paths.get(doJobsProperties.getProperty(propPrefix+".jobLockfile")));
     	rptr.releaseInterProcessLock();
-    	System.out.println( "Allowing all jobs to go free!" );
+    	System.out.println( "Allowing following jobs to go free!" );
+    	JobTbl.dumpJobLines(jobLines);
     	int corePoolSize=5; int maximumPoolSize=10; long keepAliveTime=60;
     	TimeUnit unit=TimeUnit.SECONDS;
     	BlockingQueue<Runnable> workQueue = new ArrayBlockingQueue<Runnable>(100);
@@ -154,7 +144,7 @@ public class App
     	RepThrd.start();
     	Job jl;
     	mc.dumpMsgs();
-    	 for (jobLine j :jobLines) {  
+    	 for (JobTbl j :jobLines) {  
 			try {
 				Constructor<Job> c = (Constructor<Job>) Class.forName("doJobs.doJobs." + j.jobClass)
 						.getConstructor(MsgCtr.class, String.class, String.class, String.class);
