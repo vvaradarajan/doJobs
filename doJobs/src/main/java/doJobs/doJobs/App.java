@@ -125,9 +125,12 @@ public class App
 		//jobLines=JobTbl.loadJobLines(doJobsProperties.getProperty(propPrefix+".jobConfigfile"));
     	EntityManagerFactory emf = Persistence.createEntityManagerFactory("mysqlTables");
     	EntityManager em = emf.createEntityManager();
-		jobLines=JobTbl.loadJobLinesDB(em, "ProjectG");
+		jobLines=JobTbl.loadJobLinesDB(em, args[0]);
 		em.close();emf.close();
-		
+		if (jobLines.isEmpty()) {
+			System.out.println("No jobs in category : "+ args[0]+"\n Exiting..");
+			System.exit(1);
+		}
 		long startTime = System.nanoTime();
     	MsgCtr mc = new MsgCtr(startTime,jobs);
     	Reporter rptr = new Reporter(mc,jobs,Paths.get(doJobsProperties.getProperty(propPrefix+".jobRptfile"))
