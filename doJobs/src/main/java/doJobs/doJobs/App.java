@@ -8,6 +8,7 @@ import java.io.InputStream;
 import java.lang.reflect.Constructor;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -125,7 +126,8 @@ public class App
 		//jobLines=JobTbl.loadJobLines(doJobsProperties.getProperty(propPrefix+".jobConfigfile"));
     	EntityManagerFactory emf = Persistence.createEntityManagerFactory("mysqlTables");
     	EntityManager em = emf.createEntityManager();
-		jobLines=JobTbl.loadJobLinesDB(em, args[0]);
+		String categ=args[0];
+		jobLines=JobTbl.loadJobLinesDB(em, categ);
 		em.close();emf.close();
 		if (jobLines.isEmpty()) {
 			System.out.println("No jobs in category : "+ args[0]+"\n Exiting..");
@@ -136,9 +138,8 @@ public class App
     	Reporter rptr = new Reporter(mc,jobs,Paths.get(doJobsProperties.getProperty(propPrefix+".jobRptfile"))
     			,Paths.get(doJobsProperties.getProperty(propPrefix+".jobLockfile")));
     	rptr.releaseInterProcessLock();
-    	System.out.println( "Allowing following jobs to go free!" );
-    	JobTbl.dumpJobLines(jobLines);
-    	int corePoolSize=5; int maximumPoolSize=10; long keepAliveTime=60;
+    	
+    	int corePoolSize=10; int maximumPoolSize=10; long keepAliveTime=60;
     	TimeUnit unit=TimeUnit.SECONDS;
     	BlockingQueue<Runnable> workQueue = new ArrayBlockingQueue<Runnable>(100);
     	ThreadPoolExecutor tpi = new ThreadPoolExecutor(corePoolSize,maximumPoolSize,keepAliveTime,unit, workQueue);
@@ -147,30 +148,37 @@ public class App
     	RepThrd.start();
     	Job jl;
     	mc.dumpMsgs();
-    	 for (JobTbl j :jobLines) {  
-			try {
-				Constructor<Job> c = (Constructor<Job>) Class.forName("doJobs.doJobs." + j.jobClass)
-						.getConstructor(MsgCtr.class, String.class, String.class, String.class);
-				jl = (Job) c.newInstance(mc, j.jobId, j.jobClass, j.jobParams);
-				jobs.put(j.jobId,jl);
-				tpi.execute(jl);
-			} catch (InstantiationException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-				System.exit(1);
-			} catch (IllegalAccessException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-				System.exit(1);
-			} catch (ClassNotFoundException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-				System.exit(1);
-			} catch (Exception e) {
-				e.printStackTrace();
-				System.exit(1);
+		while (!jobLines.isEmpty()) {
+			ArrayList<JobTbl> jrs = JobTbl.getReadySet(jobLines);
+			System.out.println("Allowing following jobs to go free!");
+			JobTbl.dumpJobLines(jrs);
+
+			for (JobTbl j : jrs) {
+				try {
+					Constructor<Job> c = (Constructor<Job>) Class.forName("doJobs.doJobs." + j.jobClass)
+							.getConstructor(MsgCtr.class, String.class, String.class, String.class);
+					jl = (Job) c.newInstance(mc, j.jobId, j.jobClass, j.jobParams);
+					jobs.put(j.jobId, jl);
+					System.out.println("Started: " + j.jobId);
+					tpi.execute(jl);
+				} catch (InstantiationException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+					System.exit(1);
+				} catch (IllegalAccessException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+					System.exit(1);
+				} catch (ClassNotFoundException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+					System.exit(1);
+				} catch (Exception e) {
+					e.printStackTrace();
+					System.exit(1);
+				}
 			}
-    	}
+		}
     	System.out.println("Waiting for all threads to Complete..");
     	tpi.shutdown();
     	tpi.awaitTermination(1000, TimeUnit.SECONDS);
@@ -178,13 +186,17 @@ public class App
     	rptr.stopFlag=true; // stop reporter thread after all jobs are done
     	mc.dumpMsgs();
     	mc.endingPost();
-    	long endTime = System.nanoTime();
     	System.out.println("Total Elapsed Time: " + mc.getTimeFromStart() + " ms");
     	while (true) {
     		if (RepThrd.getState() != Thread.State.TERMINATED) {
     			Thread.sleep(1000);
     		}
-    		else System.exit(0);
+    		else {
+    			//record execution status in DB
+    			BufferedReader is = Files.newBufferedReader(Paths.get(doJobsProperties.getProperty(propPrefix+".jobRptfile")));
+    			JobExecRecords.saveJobExecutionInDB(em, categ, is);
+    			System.exit(0);
+    		}
     	}
     }
 }

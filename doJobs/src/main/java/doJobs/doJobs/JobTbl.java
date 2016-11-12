@@ -7,8 +7,10 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -20,7 +22,10 @@ import javax.persistence.Id;
 import javax.persistence.Persistence;
 import javax.persistence.Table;
 
+import com.google.gson.Gson;
+
 import doJobs.doJobs.Job.jobStatusCode;
+import doJobs.doJobs.JobExecRecords.jobs;
 
 
 @Entity
@@ -31,10 +36,18 @@ public class JobTbl implements Serializable  {
 		this.jobId = jobId;
 		this.jobClass = jobClass;
 		this.jobParams = jobParams;
+    	Gson gson = new Gson();
+    	this.params = gson.fromJson(jobParams, jobParams.class);
 	}
+    static class jobParams {
+    	//{"Dependents":["passA","passK"],"jobTime":2}
+    	Set<String> Dependents;
+    	int jobTime;
+    }
 	@Id String jobId;
 	String jobClass;
 	String jobParams;
+	transient jobParams params;
 	transient jobStatusCode jobStatus;
 	static ArrayList<JobTbl> jobLines = new ArrayList<JobTbl>();
 	@Override
@@ -76,6 +89,26 @@ public class JobTbl implements Serializable  {
     		} else System.out.println("No Match Ignoring line: " + ln);
     	}
     	return jobLines;
+    }
+    public static ArrayList<JobTbl> getReadySet(List<JobTbl> jobLines) {
+    	//Intelligently choose the next set of jobs to execute (Note: jobLines should contain only remaining jobs)
+    	ArrayList<JobTbl> jrs = new ArrayList<JobTbl>();
+    	for (JobTbl j:jobLines) {
+    		if (j.params.Dependents.isEmpty()) {
+    			//Add job to readyList
+    			jrs.add(j);
+    		}
+    	}
+    	//delete those that ready from jobLines
+    	for (JobTbl jr:jrs) {
+    		jobLines.remove(jr);
+    		for (JobTbl j:jobLines) {
+        		j.params.Dependents.remove(jr.jobId);
+        	}
+    	}
+    	//delete those dependencies from the params
+    	
+    	return jrs;
     }
 
     public static void dumpJobLines(List<JobTbl> jobLines) {
